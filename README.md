@@ -3,4 +3,4 @@
 
 [![Maintainability](https://api.codeclimate.com/v1/badges/b7b8b0605fead32ab0d7/maintainability)](https://codeclimate.com/github/dregmar-bot/frontend-project-11/maintainability)
 ### Link to the aggregator:
-[link](frontend-project-11-dregmar-bot.vercel.app)
+[link](https://frontend-project-11-dregmar-bot.vercel.app)
