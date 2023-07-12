@@ -1,6 +1,6 @@
 import onChange from 'on-change';
 
-export default (state) => {
+export default (state, instance) => {
   const render = (_path, value) => {
     const input = document.querySelector('#url-input');
     input.classList.remove('is-invalid')
@@ -11,7 +11,7 @@ export default (state) => {
     if (value === 'invalid') {
       input.classList.add('is-invalid');
       const errorDiv = document.createElement('div');
-      errorDiv.textContent = state.error.message;
+      errorDiv.textContent = instance.t(state.error.message);
       errorDiv.classList.add('invalid-feedback');
       input.parentNode.append(errorDiv);
       return;
