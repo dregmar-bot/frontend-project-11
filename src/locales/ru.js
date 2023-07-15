@@ -5,6 +5,11 @@ export default {
       alreadyHave: 'Ссылка уже добавлена в агрегатор',
       parserError: 'Произошла ошибка парсинга RSS',
       networkError: 'Ошибка сети. Попробуйте позже',
-    }
+    },
+    cardTitles: {
+      feeds: 'Фиды',
+      posts: 'Посты'
+    },
+    buttonText: 'Просмотр',
   }
 };
