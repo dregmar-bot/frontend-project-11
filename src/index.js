@@ -17,14 +17,14 @@ i18nInstance.init({
 })
 
 const state = {
-  validState: '',
+  error: '',
   feeds: [],
 }
 const watchedState = watch(state, i18nInstance);
 const urlSchema = string().url('errors.notValidUrl').test(
   'already not',
   'errors.alreadyHave',
-  (value) => !state.feeds.includes(value),
+  (value) => !state.feeds.map((feed) => feed.link).includes(value),
 );
 
 
@@ -35,14 +35,12 @@ rssForm.addEventListener('submit', (e) => {
   const { url } = Object.fromEntries(new FormData(e.target));
   urlSchema.validate(url)
     .then((url) => {
-      state.feeds = [...state.feeds, url];
-      state.validState = '';
-      watchedState.validState = 'valid';
       axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${url}`)
       .then((response) => {
         const parsedRss = parseRss(response.data.contents);
         if (parsedRss.querySelector('parsererror')){
           watchedState.error = 'errors.parserError';
+          return;
         }
         const items = parsedRss.querySelectorAll('item');
         const posts = [...items].map((item) => ({
@@ -50,19 +48,20 @@ rssForm.addEventListener('submit', (e) => {
           link: item.querySelector('link'),
         }))
         const newFeed = {
+          id: state.feeds.length + 1,
+          link: url,
           title: parsedRss.querySelector('title').textContent,
           description: parsedRss.querySelector('description').textContent,
           posts
         }
         watchedState.feeds = [...state.feeds, newFeed];
       })
-      .catch((_e) => {
+      .catch((e) => {
+        console.log(e)
         watchedState.error = 'errors.networkError';
       })
     })
     .catch((error) => {
-      state.error = error;
-      state.validState = '';
-      watchedState.validState = 'invalid';
+      watchedState.error = error.message;
     });
 })
