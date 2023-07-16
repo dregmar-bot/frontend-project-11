@@ -17,6 +17,7 @@ i18nInstance.init({
 })
 
 const state = {
+  state: false,
   error: '',
   feeds: [],
 }
@@ -27,7 +28,48 @@ const urlSchema = string().url('errors.notValidUrl').test(
   (value) => !state.feeds.map((feed) => feed.link).includes(value),
 );
 
+const updateFeed = (feed) => {
+  window.setTimeout(() => {
+    takeFeed(feed.link);
+  }, 5000);
+};
 
+const takeFeed = (url) => {
+  axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`)
+  .then((response) => {
+    const parsedRss = parseRss(response.data.contents);
+    if (parsedRss.querySelector('parsererror')){
+      watchedState.error = 'errors.parserError';
+      return;
+    }
+    const items = parsedRss.querySelectorAll('item');
+    const posts = [...items].map((item) => ({
+      title: item.querySelector('title').textContent,
+      link: item.querySelector('link'),
+    }))
+    if (!state.feeds.map((feed) => feed.link).includes(url)) {
+      const newFeed = {
+        id: state.feeds.length + 1,
+        link: url,
+        title: parsedRss.querySelector('title').textContent,
+        description: parsedRss.querySelector('description').textContent,
+        posts
+      }
+      watchedState.feeds = [...state.feeds, newFeed];
+    } else {
+      const [currentFeed] = state.feeds.filter((feed) => feed.link === url);
+      const currentPostsTitles = currentFeed.posts.map((post) => post.title);
+      const newPosts = posts.filter((post) => !currentPostsTitles.includes(post.title));
+      currentFeed.posts = [...currentFeed.posts, ...newPosts];
+      watchedState.state = true;
+      state.state = false;
+    }
+    state.feeds.forEach((feed) => updateFeed(feed));
+  })
+  .catch((_e) => {
+    watchedState.error = 'errors.networkError';
+  })
+};
 
 const rssForm = document.querySelector('.rss-form');
 rssForm.addEventListener('submit', (e) => {
@@ -35,33 +77,10 @@ rssForm.addEventListener('submit', (e) => {
   const { url } = Object.fromEntries(new FormData(e.target));
   urlSchema.validate(url)
     .then((url) => {
-      axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${url}`)
-      .then((response) => {
-        const parsedRss = parseRss(response.data.contents);
-        if (parsedRss.querySelector('parsererror')){
-          watchedState.error = 'errors.parserError';
-          return;
-        }
-        const items = parsedRss.querySelectorAll('item');
-        const posts = [...items].map((item) => ({
-          title: item.querySelector('title').textContent,
-          link: item.querySelector('link'),
-        }))
-        const newFeed = {
-          id: state.feeds.length + 1,
-          link: url,
-          title: parsedRss.querySelector('title').textContent,
-          description: parsedRss.querySelector('description').textContent,
-          posts
-        }
-        watchedState.feeds = [...state.feeds, newFeed];
-      })
-      .catch((e) => {
-        console.log(e)
-        watchedState.error = 'errors.networkError';
-      })
+      takeFeed(url);
     })
     .catch((error) => {
       watchedState.error = error.message;
-    });
-})
+    })
+});
+
