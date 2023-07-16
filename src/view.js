@@ -17,25 +17,24 @@ export default (state, instance) => {
       input.parentNode.append(errorDiv);
       return;
     }
-    if (path === 'feeds') {
       const postsDiv = document.querySelector('.posts');
       const feedsDiv = document.querySelector('.feeds');
-      const card = document.createElement('div');
-      card.classList.add('card', 'border-0')
-      const cardBody = document.createElement('div');
-      cardBody.classList.add('card-body');
-      const cardTitle = document.createElement('h2');
-      cardTitle.classList.add('card-title', 'h4');
-      cardBody.append(cardTitle);
-      const listGroup = document.createElement('ul');
-      listGroup.classList.add('list-group', 'border-0', 'rounded-0');
-      card.append(cardBody, listGroup);
-      postsDiv.append(card);
-      feedsDiv.append(card.cloneNode(true));
-      feedsDiv.querySelector('.card-title').textContent = instance.t('cardTitles.feeds');
-      postsDiv.querySelector('.card-title').textContent = instance.t('cardTitles.posts');
-      const newFeedId = Math.max(...state.feeds.map((feed) => feed.id));
-      const [newFeed] = state.feeds.filter((feed) => feed.id === newFeedId);
+      if (!feedsDiv.querySelector('.card-title')) {
+        const card = document.createElement('div');
+        card.classList.add('card', 'border-0')
+        const cardBody = document.createElement('div');
+        cardBody.classList.add('card-body');
+        const cardTitle = document.createElement('h2');
+        cardTitle.classList.add('card-title', 'h4');
+        cardBody.append(cardTitle);
+        const listGroup = document.createElement('ul');
+        listGroup.classList.add('list-group', 'border-0', 'rounded-0');
+        card.append(cardBody, listGroup);
+        postsDiv.append(card);
+        feedsDiv.append(card.cloneNode(true));
+        feedsDiv.querySelector('.card-title').textContent = instance.t('cardTitles.feeds');
+        postsDiv.querySelector('.card-title').textContent = instance.t('cardTitles.posts');
+      }
       const listGroupItem = document.createElement('li');
       listGroupItem.classList.add('list-group-item', 'border-0', 'border-end-0')
       const prepareFeedHtml = (feed) => {
@@ -49,7 +48,8 @@ export default (state, instance) => {
         return listGroupItem;
       };
       const preparePostsHtml = (feed) => {
-         return feed.posts.map((post) => {
+        return feed.posts
+        .map((post) => {
           const listItem = listGroupItem.cloneNode();
           listItem.classList.add('d-flex', 'justify-content-between', 'align-items-start');
           const a = document.createElement('a');
@@ -70,14 +70,27 @@ export default (state, instance) => {
           return listItem;
         });
       }
-      const feedHtml = prepareFeedHtml(newFeed);
-      const postsHtml = preparePostsHtml(newFeed);
-      feedsDiv.querySelector('.list-group').append(feedHtml);
-      postsDiv.querySelector('.list-group').append(...postsHtml);
+      let feeds = [];
+      let posts = [];
+      state.feeds.forEach((feed) => {
+        const postsHtml = preparePostsHtml(feed);
+        const feedHtml = prepareFeedHtml(feed);
+        feeds = [...feeds, feedHtml];
+        posts = [...posts, ...postsHtml];
+      });
+      const sortedPosts = posts.sort((a, b) => {
+        const regExp = /[A-Z]/;
+        const [strDateA, strTimeA] = a.textContent.split(' ')[2].split(regExp);
+        const [strDateB, strTimeB] = b.textContent.split(' ')[2].split(regExp);
+        const dateA = new Date(`${strDateA} ${strTimeA}`);
+        const dateB = new Date(`${strDateB} ${strTimeB}`);
+        return dateA > dateB ? -1 : 1;
+      });
+      feedsDiv.querySelector('.list-group').replaceChildren(...feeds);
+      postsDiv.querySelector('.list-group').replaceChildren(...sortedPosts);
       const form = document.querySelector('.rss-form');
       form.reset();
       input.focus();
-    }
   }
-  return onChange(state, render);
+  return onChange(state, render, { isShallow: true });
 }
