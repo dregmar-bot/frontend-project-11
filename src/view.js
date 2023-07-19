@@ -88,14 +88,17 @@ export default (state, instance) => {
     const form = document.querySelector('.rss-form');
     form.reset();
     input.focus();
-    const listItems = document.querySelectorAll('.list-group-item');
-    listItems.forEach((btn) => btn.addEventListener('click', (e) => {
-      const btnId = e.target.dataset.id;
-      const { link, title, description } = state.getPost(btnId);
-      state.uiState.viewedPosts = [...state.uiState.viewedPosts, btnId];
-      state.modal = { title, description, link };
+    const handler = (e) => {
+      const id = Number(e.target.dataset.id);
+      const {title, description, link} = state.getPost(id)
+      state.uiState.viewedPosts = [...state.uiState.viewedPosts, id];
+      state.modal = {title, description, link};
       render();
-    }))
+    }
+    const buttons = document.querySelectorAll('.btn-sm');
+    const links = document.querySelectorAll('[rel="noopener noreferrer"]');
+    buttons.forEach((btn) => btn.addEventListener('click', handler))
+    links.forEach((link) => link.addEventListener('click', handler))
   }
   return onChange(state, render, { isShallow: true });
 }
