@@ -92,7 +92,6 @@ export default (state, instance) => {
       const idB = b.firstChild.getAttribute('data-id');
       return Number(idA) > Number(idB) ? -1 : 1;
     });
-    console.log(posts.map((post) => post.firstChild.getAttribute('data-id')));
     feedsDiv.querySelector('.list-group').replaceChildren(...feeds);
     postsDiv.querySelector('.list-group').replaceChildren(...sortedPosts);
     const handler = (e) => {
