@@ -58,7 +58,7 @@ export default (state, instance) => {
         } else {
           a.classList.add('fw-bold');
         }
-        a.setAttribute('data-id', '2')
+        a.setAttribute('data-id', `${post.id}`)
         a.setAttribute('target', '_blank')
         a.setAttribute('rel', 'noopener noreferrer')
         a.href = post.link;
@@ -82,21 +82,14 @@ export default (state, instance) => {
       feeds = [...feeds, feedHtml];
       posts = [...posts, ...postsHtml];
     });
-    const sortedPosts = posts.sort((a, b) => {
-      const regExp = /[A-Z]/;
-      const [strDateA, strTimeA] = a.textContent.split(' ')[2].split(regExp);
-      const [strDateB, strTimeB] = b.textContent.split(' ')[2].split(regExp);
-      const dateA = new Date(`${strDateA} ${strTimeA}`);
-      const dateB = new Date(`${strDateB} ${strTimeB}`);
-      return dateA > dateB ? -1 : 1;
-    });
+    const sortedPosts = posts.sort((a, b) => a.id > b.id ? 1 : -1);
     feedsDiv.querySelector('.list-group').replaceChildren(...feeds);
     postsDiv.querySelector('.list-group').replaceChildren(...sortedPosts);
     const form = document.querySelector('.rss-form');
     form.reset();
     input.focus();
-    const viewButtons = document.querySelectorAll('.btn-sm');
-    viewButtons.forEach((btn) => btn.addEventListener('click', (e) => {
+    const listItems = document.querySelectorAll('.list-group-item');
+    listItems.forEach((btn) => btn.addEventListener('click', (e) => {
       const btnId = e.target.dataset.id;
       const { link, title, description } = state.getPost(btnId);
       state.uiState.viewedPosts = [...state.uiState.viewedPosts, btnId];
