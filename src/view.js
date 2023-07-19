@@ -15,8 +15,13 @@ export default (state, instance) => {
       feedbackDiv.textContent = errorMessage;
       return;
     }
-    feedbackDiv.textContent = instance.t('complete');
-    feedbackDiv.classList.replace('text-danger','text-success');
+    if (path === 'feeds') {
+      const form = document.querySelector('.rss-form');
+      form.reset();
+      input.focus();
+      feedbackDiv.textContent = instance.t('complete');
+      feedbackDiv.classList.replace('text-danger','text-success');
+    }
     const postsDiv = document.querySelector('.posts');
     const feedsDiv = document.querySelector('.feeds');
     if (!feedsDiv.querySelector('.card-title')) {
@@ -85,9 +90,6 @@ export default (state, instance) => {
     const sortedPosts = posts.sort((a, b) => a.id > b.id ? 1 : -1);
     feedsDiv.querySelector('.list-group').replaceChildren(...feeds);
     postsDiv.querySelector('.list-group').replaceChildren(...sortedPosts);
-    const form = document.querySelector('.rss-form');
-    form.reset();
-    input.focus();
     const handler = (e) => {
       const id = Number(e.target.dataset.id);
       const {title, description, link} = state.getPost(id)
