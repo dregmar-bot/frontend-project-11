@@ -42,10 +42,11 @@ const urlSchema = string().url('errors.notValidUrl').test(
   (value) => !state.feeds.map((feed) => feed.link).includes(value),
 );
 
-const updateFeed = (feed) => {
-  window.setTimeout(() => {
+const updateFeeds = () => {
+  state.feeds.forEach((feed) => {
     takeFeed(feed.link);
-  }, 5000);
+  });
+  window.setTimeout(updateFeeds, 5000)
 };
 
 const takeFeed = (url) => {
@@ -81,8 +82,6 @@ const takeFeed = (url) => {
         watchedState.displayed = true;
         state.displayed = false;
       }
-      state.feeds.forEach((feed) => updateFeed(feed));
-
     } catch {
       watchedState.error = 'errors.undefinedError';
     }
@@ -98,6 +97,7 @@ rssForm.addEventListener('submit', (e) => {
   urlSchema.validate(url)
     .then((url) => {
       takeFeed(url);
+      updateFeeds();
     })
     .catch((error) => {
       watchedState.error = error.message;
