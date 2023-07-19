@@ -97,10 +97,9 @@ rssForm.addEventListener('submit', (e) => {
   urlSchema.validate(url)
     .then((url) => {
       takeFeed(url);
-      updateFeeds();
     })
     .catch((error) => {
       watchedState.error = error.message;
     })
 });
-
+document.addEventListener('DOMContentLoaded', () => updateFeeds());
