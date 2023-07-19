@@ -29,13 +29,8 @@ const state = {
   uiState:  {
     viewedPosts: [],
   },
-  getFeed: (id) => {
-    const [result] = state.feeds.filter((feed) => feed.id === id);
-    return result
-  },
   getPost: (id) => {
-    const feedId = id.split('-')[0];
-    const feed = state.getFeed(feedId);
+    const [feed] = state.feeds.filter((feed) => feed.posts.map((post) => post.id).includes(id));
     const [result] = feed.posts.filter((post) => post.id === id);
     return result;
   },
@@ -63,17 +58,15 @@ const takeFeed = (url) => {
         return;
       }
       const items = parsedRss.querySelectorAll('item');
-      const feedId = String(state.feeds.length + 1);
       const posts = [...items].map((item) => ({
         viewed: false,
-        id: `${feedId}-${state.maxPostId++}`,
+        id: state.maxPostId++,
         title: item.querySelector('title').textContent,
         description: item.querySelector('description').textContent,
         link: item.querySelector('link').textContent,
       }))
       if (!state.feeds.map((feed) => feed.link).includes(url)) {
         const newFeed = {
-          id: feedId,
           link: url,
           title: parsedRss.querySelector('title').textContent,
           description: parsedRss.querySelector('description').textContent,
@@ -85,15 +78,15 @@ const takeFeed = (url) => {
         const currentPostsTitles = currentFeed.posts.map((post) => post.title);
         const newPosts = posts.filter((post) => !currentPostsTitles.includes(post.title));
         currentFeed.posts = [...currentFeed.posts, ...newPosts];
-        watchedState.state = true;
+        watchedState.displayed = true;
         state.displayed = false;
       }
       state.feeds.forEach((feed) => updateFeed(feed));
-    } catch (e) {
+
+    } catch {
       watchedState.error = 'errors.undefinedError';
     }
-  }).catch((e) => {
-    console.log(e)
+  }).catch(() => {
     watchedState.error = 'errors.networkError';
   });
 }
