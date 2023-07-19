@@ -6,12 +6,12 @@ export default {
       alreadyHave: 'RSS уже существует',
       parserError: 'Ресурс не содержит валидный RSS',
       networkError: 'Ошибка сети. Попробуйте позже',
-      undefinedError: 'Неизвестная ошибка. Что-то пошло не так'
+      undefinedError: 'Неизвестная ошибка. Что-то пошло не так',
     },
     cardTitles: {
       feeds: 'Фиды',
-      posts: 'Посты'
+      posts: 'Посты',
     },
     buttonText: 'Просмотр',
-  }
+  },
 };
