@@ -87,7 +87,12 @@ export default (state, instance) => {
       feeds = [...feeds, feedHtml];
       posts = [...posts, ...postsHtml];
     });
-    const sortedPosts = posts.sort((a, b) => a.id > b.id ? 1 : -1);
+    const sortedPosts = posts.sort((a, b) => {
+      const idA = a.firstChild.getAttribute('data-id');
+      const idB = b.firstChild.getAttribute('data-id');
+      return Number(idA) > Number(idB) ? -1 : 1;
+    });
+    console.log(posts.map((post) => post.firstChild.getAttribute('data-id')));
     feedsDiv.querySelector('.list-group').replaceChildren(...feeds);
     postsDiv.querySelector('.list-group').replaceChildren(...sortedPosts);
     const handler = (e) => {
