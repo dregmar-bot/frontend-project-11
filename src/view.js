@@ -2,95 +2,107 @@ import onChange from 'on-change';
 
 export default (state, instance) => {
   const render = (path, value) => {
+    document.querySelector('.modal-title').textContent = state.modal.title;
+    document.querySelector('.modal-body').textContent = state.modal.description;
+    document.querySelector('.full-article').href = state.modal.link;
     const input = document.querySelector('#url-input');
     input.classList.remove('is-invalid')
-    const feedbackDiv = document.querySelector('.invalid-feedback');
-    if(feedbackDiv) {
-      input.parentNode.removeChild(feedbackDiv);
-    }
+    const feedbackDiv = document.querySelector('.feedback');
     if (path === 'error') {
       const errorMessage = instance.t(value);
+      feedbackDiv.classList.replace('text-success','text-danger');
       input.classList.add('is-invalid');
-      const errorDiv = document.createElement('div');
-      errorDiv.textContent = errorMessage;
-      errorDiv.classList.add('invalid-feedback');
-      input.parentNode.append(errorDiv);
+      feedbackDiv.textContent = errorMessage;
       return;
     }
-      const postsDiv = document.querySelector('.posts');
-      const feedsDiv = document.querySelector('.feeds');
-      if (!feedsDiv.querySelector('.card-title')) {
-        const card = document.createElement('div');
-        card.classList.add('card', 'border-0')
-        const cardBody = document.createElement('div');
-        cardBody.classList.add('card-body');
-        const cardTitle = document.createElement('h2');
-        cardTitle.classList.add('card-title', 'h4');
-        cardBody.append(cardTitle);
-        const listGroup = document.createElement('ul');
-        listGroup.classList.add('list-group', 'border-0', 'rounded-0');
-        card.append(cardBody, listGroup);
-        postsDiv.append(card);
-        feedsDiv.append(card.cloneNode(true));
-        feedsDiv.querySelector('.card-title').textContent = instance.t('cardTitles.feeds');
-        postsDiv.querySelector('.card-title').textContent = instance.t('cardTitles.posts');
-      }
-      const listGroupItem = document.createElement('li');
-      listGroupItem.classList.add('list-group-item', 'border-0', 'border-end-0')
-      const prepareFeedHtml = (feed) => {
-        const h = document.createElement('h3');
-        h.classList.add('h6', 'm-0');
-        h.textContent = feed.title;
-        const p = document.createElement('p');
-        p.classList.add('m-0', 'small', 'text-black-50');
-        p.textContent = feed.description;
-        listGroupItem.append(h, p);
-        return listGroupItem;
-      };
-      const preparePostsHtml = (feed) => {
-        return feed.posts
-        .map((post) => {
-          const listItem = listGroupItem.cloneNode();
-          listItem.classList.add('d-flex', 'justify-content-between', 'align-items-start');
-          const a = document.createElement('a');
+    feedbackDiv.textContent = instance.t('complete');
+    feedbackDiv.classList.replace('text-danger','text-success');
+    const postsDiv = document.querySelector('.posts');
+    const feedsDiv = document.querySelector('.feeds');
+    if (!feedsDiv.querySelector('.card-title')) {
+      const card = document.createElement('div');
+      card.classList.add('card', 'border-0')
+      const cardBody = document.createElement('div');
+      cardBody.classList.add('card-body');
+      const cardTitle = document.createElement('h2');
+      cardTitle.classList.add('card-title', 'h4');
+      cardBody.append(cardTitle);
+      const listGroup = document.createElement('ul');
+      listGroup.classList.add('list-group', 'border-0', 'rounded-0');
+      card.append(cardBody, listGroup);
+      postsDiv.append(card);
+      feedsDiv.append(card.cloneNode(true));
+      feedsDiv.querySelector('.card-title').textContent = instance.t('cardTitles.feeds');
+      postsDiv.querySelector('.card-title').textContent = instance.t('cardTitles.posts');
+    }
+    const listGroupItem = document.createElement('li');
+    listGroupItem.classList.add('list-group-item', 'border-0', 'border-end-0')
+    const prepareFeedHtml = (feed) => {
+      const h = document.createElement('h3');
+      h.classList.add('h6', 'm-0');
+      h.textContent = feed.title;
+      const p = document.createElement('p');
+      p.classList.add('m-0', 'small', 'text-black-50');
+      p.textContent = feed.description;
+      listGroupItem.append(h, p);
+      return listGroupItem;
+    };
+    const preparePostsHtml = (feed) => {
+      return feed.posts
+      .map((post) => {
+        const listItem = listGroupItem.cloneNode();
+        listItem.classList.add('d-flex', 'justify-content-between', 'align-items-start');
+        const a = document.createElement('a');
+        if (state.uiState.viewedPosts.includes(post.id)) {
+          a.classList.add('fw-normal', 'link-secondary');
+        } else {
           a.classList.add('fw-bold');
-          a.setAttribute('data-id', '2')
-          a.setAttribute('target', '_blank')
-          a.setAttribute('rel', 'noopener noreferrer')
-          a.href = post.link;
-          a.textContent = post.title;
-          const btn = document.createElement('button');
-          btn.classList.add('btn', 'btn-outline-primary', 'btn-sm');
-          btn.setAttribute('data-id', '2')
-          btn.setAttribute('data-bs-toggle', 'modal')
-          btn.setAttribute('data-bs-target', '#modal');
-          btn.type = 'button';
-          btn.textContent = instance.t('buttonText');
-          listItem.append(a, btn);
-          return listItem;
-        });
-      }
-      let feeds = [];
-      let posts = [];
-      state.feeds.forEach((feed) => {
-        const postsHtml = preparePostsHtml(feed);
-        const feedHtml = prepareFeedHtml(feed);
-        feeds = [...feeds, feedHtml];
-        posts = [...posts, ...postsHtml];
+        }
+        a.setAttribute('data-id', '2')
+        a.setAttribute('target', '_blank')
+        a.setAttribute('rel', 'noopener noreferrer')
+        a.href = post.link;
+        a.textContent = post.title;
+        const btn = document.createElement('button');
+        btn.classList.add('btn', 'btn-outline-primary', 'btn-sm');
+        btn.setAttribute('data-id', `${post.id}`);
+        btn.setAttribute('data-bs-toggle', 'modal')
+        btn.setAttribute('data-bs-target', '#modal');
+        btn.type = 'button';
+        btn.textContent = instance.t('buttonText');
+        listItem.append(a, btn);
+        return listItem;
       });
-      const sortedPosts = posts.sort((a, b) => {
-        const regExp = /[A-Z]/;
-        const [strDateA, strTimeA] = a.textContent.split(' ')[2].split(regExp);
-        const [strDateB, strTimeB] = b.textContent.split(' ')[2].split(regExp);
-        const dateA = new Date(`${strDateA} ${strTimeA}`);
-        const dateB = new Date(`${strDateB} ${strTimeB}`);
-        return dateA > dateB ? -1 : 1;
-      });
-      feedsDiv.querySelector('.list-group').replaceChildren(...feeds);
-      postsDiv.querySelector('.list-group').replaceChildren(...sortedPosts);
-      const form = document.querySelector('.rss-form');
-      form.reset();
-      input.focus();
+    }
+    let feeds = [];
+    let posts = [];
+    state.feeds.forEach((feed) => {
+      const postsHtml = preparePostsHtml(feed);
+      const feedHtml = prepareFeedHtml(feed);
+      feeds = [...feeds, feedHtml];
+      posts = [...posts, ...postsHtml];
+    });
+    const sortedPosts = posts.sort((a, b) => {
+      const regExp = /[A-Z]/;
+      const [strDateA, strTimeA] = a.textContent.split(' ')[2].split(regExp);
+      const [strDateB, strTimeB] = b.textContent.split(' ')[2].split(regExp);
+      const dateA = new Date(`${strDateA} ${strTimeA}`);
+      const dateB = new Date(`${strDateB} ${strTimeB}`);
+      return dateA > dateB ? -1 : 1;
+    });
+    feedsDiv.querySelector('.list-group').replaceChildren(...feeds);
+    postsDiv.querySelector('.list-group').replaceChildren(...sortedPosts);
+    const form = document.querySelector('.rss-form');
+    form.reset();
+    input.focus();
+    const viewButtons = document.querySelectorAll('.btn-sm');
+    viewButtons.forEach((btn) => btn.addEventListener('click', (e) => {
+      const btnId = e.target.dataset.id;
+      const { link, title, description } = state.getPost(btnId);
+      state.uiState.viewedPosts = [...state.uiState.viewedPosts, btnId];
+      state.modal = { title, description, link };
+      render();
+    }))
   }
   return onChange(state, render, { isShallow: true });
 }
