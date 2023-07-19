@@ -5,7 +5,7 @@ install:
 	npm ci
 
 lint:
-	npx eslint
+	npx eslint .
 
 build:
 	NODE_ENV=production npx webpack
