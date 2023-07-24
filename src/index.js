@@ -44,46 +44,46 @@ const app = () => {
 
   const takeFeed = (url) => {
     axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`)
-    .then((response) => {
-      try {
-        const parsedRss = parseRss(response.data.contents);
-        if (parsedRss.querySelector('parsererror')) {
-          watchedState.error = 'errors.parserError';
-          return;
+      .then((response) => {
+        try {
+          const parsedRss = parseRss(response.data.contents);
+          if (parsedRss.querySelector('parsererror')) {
+            watchedState.error = 'errors.parserError';
+            return;
+          }
+          const items = parsedRss.querySelectorAll('item');
+          const posts = [...items].map((item) => {
+            const result = {
+              viewed: false,
+              id: state.maxPostId += 1,
+              title: item.querySelector('title').textContent,
+              description: item.querySelector('description').textContent,
+              link: item.querySelector('link').textContent,
+            };
+            return result;
+          });
+          if (!state.feeds.map((feed) => feed.link).includes(url)) {
+            const newFeed = {
+              link: url,
+              title: parsedRss.querySelector('title').textContent,
+              description: parsedRss.querySelector('description').textContent,
+              posts,
+            };
+            watchedState.feeds = [...state.feeds, newFeed];
+          } else {
+            const [currentFeed] = state.feeds.filter((feed) => feed.link === url);
+            const currentPostsTitles = currentFeed.posts.map((post) => post.title);
+            const newPosts = posts.filter((post) => !currentPostsTitles.includes(post.title));
+            currentFeed.posts = [...currentFeed.posts, ...newPosts];
+            watchedState.displayed = true;
+            state.displayed = false;
+          }
+        } catch {
+          watchedState.error = 'errors.undefinedError';
         }
-        const items = parsedRss.querySelectorAll('item');
-        const posts = [...items].map((item) => {
-          const result = {
-            viewed: false,
-            id: state.maxPostId += 1,
-            title: item.querySelector('title').textContent,
-            description: item.querySelector('description').textContent,
-            link: item.querySelector('link').textContent,
-          };
-          return result;
-        });
-        if (!state.feeds.map((feed) => feed.link).includes(url)) {
-          const newFeed = {
-            link: url,
-            title: parsedRss.querySelector('title').textContent,
-            description: parsedRss.querySelector('description').textContent,
-            posts,
-          };
-          watchedState.feeds = [...state.feeds, newFeed];
-        } else {
-          const [currentFeed] = state.feeds.filter((feed) => feed.link === url);
-          const currentPostsTitles = currentFeed.posts.map((post) => post.title);
-          const newPosts = posts.filter((post) => !currentPostsTitles.includes(post.title));
-          currentFeed.posts = [...currentFeed.posts, ...newPosts];
-          watchedState.displayed = true;
-          state.displayed = false;
-        }
-      } catch {
-        watchedState.error = 'errors.undefinedError';
-      }
-    }).catch(() => {
-      watchedState.error = 'errors.networkError';
-    });
+      }).catch(() => {
+        watchedState.error = 'errors.networkError';
+      });
   };
   const updateFeeds = () => {
     state.feeds.forEach((feed) => {
@@ -97,12 +97,12 @@ const app = () => {
     e.preventDefault();
     const { url } = Object.fromEntries(new FormData(e.target));
     urlSchema.validate(url)
-    .then((link) => {
-      takeFeed(link);
-    })
-    .catch((error) => {
-      watchedState.error = error.message;
-    });
+      .then((link) => {
+        takeFeed(link);
+      })
+      .catch((error) => {
+        watchedState.error = error.message;
+      });
   });
   updateFeeds();
 };
