@@ -5,7 +5,7 @@ import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 
 export default {
   mode: process.env.NODE_ENV || 'development',
-  entry: './src/index.js',
+  entry: './index.js',
   output: {
     clean: true,
   },
