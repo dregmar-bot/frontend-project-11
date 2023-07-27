@@ -5,7 +5,7 @@ import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 
 export default {
   mode: process.env.NODE_ENV || 'development',
-  entry: './index.js',
+  entry: './src/index.js',
   output: {
     clean: true,
   },
@@ -15,7 +15,7 @@ export default {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: './src/index.html',
+      template: './index.html',
     }),
     new MiniCssExtractPlugin(),
   ],
