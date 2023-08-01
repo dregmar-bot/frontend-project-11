@@ -92,17 +92,6 @@ export default (state, instance) => {
     });
     feedsDiv.querySelector('.list-group').replaceChildren(...feeds);
     postsDiv.querySelector('.list-group').replaceChildren(...sortedPosts);
-    const handler = (e) => {
-      const id = Number(e.target.dataset.id);
-      const { title, description, link } = state.getPost(id);
-      state.uiState.viewedPosts = [...state.uiState.viewedPosts, id];
-      state.modal = { title, description, link };
-      render();
-    };
-    const buttons = document.querySelectorAll('.btn-sm');
-    const links = document.querySelectorAll('[rel="noopener noreferrer"]');
-    buttons.forEach((btn) => btn.addEventListener('click', handler));
-    links.forEach((link) => link.addEventListener('click', handler));
   };
   return onChange(state, render, { isShallow: true });
 };
