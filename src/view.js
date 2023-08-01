@@ -8,14 +8,14 @@ export default (state, instance) => {
     const input = document.querySelector('#url-input');
     input.classList.remove('is-invalid');
     const feedbackDiv = document.querySelector('.feedback');
-    if (path === 'error') {
+    if (state.error.length > 0) {
       const errorMessage = instance.t(value);
       feedbackDiv.classList.replace('text-success', 'text-danger');
       input.classList.add('is-invalid');
       feedbackDiv.textContent = errorMessage;
       return;
     }
-    if (path === 'feeds') {
+    if (state.addedNewFeed) {
       const form = document.querySelector('.rss-form');
       form.reset();
       input.focus();
