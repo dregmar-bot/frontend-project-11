@@ -51,15 +51,16 @@ export default () => {
             };
             if (state.addedNewFeed) {
               feed.posts.forEach(setPostId);
-              watchedState.feeds = [...state.feeds, feed];
+              state.feeds = [...state.feeds, feed];
             } else {
               const [currentFeed] = state.feeds.filter((f) => f.link === feed.link);
               const currentPostsTitles = currentFeed.posts.map((p) => p.title);
               const newPosts = feed.posts.filter((p) => !currentPostsTitles.includes(p.title));
               newPosts.forEach(setPostId);
               currentFeed.posts = [...currentFeed.posts, ...newPosts];
-              watchedState.displayed = true;
             }
+            state.error = '';
+            watchedState.displayed = true;
           } catch (e) {
             watchedState.error = e.message === 'parsing error' ? 'errors.parserError' : 'errors.undefinedError';
           }
