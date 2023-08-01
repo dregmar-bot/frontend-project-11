@@ -45,14 +45,18 @@ export default () => {
           try {
             const feed = parseRss(response.data.contents);
             feed.link = url;
+            const setPostId = (post) => {
+              post.id = _.uniqueId();
+              return post;
+            };
             if (state.addedNewFeed) {
-              feed.posts.forEach((post) => post.id = _.uniqueId());
+              feed.posts.forEach(setPostId);
               watchedState.feeds = [...state.feeds, feed];
             } else {
               const [currentFeed] = state.feeds.filter((f) => f.link === feed.link);
               const currentPostsTitles = currentFeed.posts.map((p) => p.title);
               const newPosts = feed.posts.filter((p) => !currentPostsTitles.includes(p.title));
-              newPosts.forEach((post) => post.id = _.uniqueId());
+              newPosts.forEach(setPostId);
               currentFeed.posts = [...currentFeed.posts, ...newPosts];
               watchedState.displayed = true;
             }
