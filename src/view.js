@@ -6,7 +6,6 @@ export default (state, instance) => {
     document.querySelector('.modal-body').textContent = state.modal.description;
     document.querySelector('.full-article').href = state.modal.link;
     const input = document.querySelector('#url-input');
-    input.classList.remove('is-invalid');
     const feedbackDiv = document.querySelector('.feedback');
     if (state.error.length > 0) {
       const errorMessage = instance.t(value);
@@ -16,6 +15,7 @@ export default (state, instance) => {
       return;
     }
     if (state.addedNewFeed) {
+      input.classList.remove('is-invalid');
       const form = document.querySelector('.rss-form');
       form.reset();
       input.focus();
