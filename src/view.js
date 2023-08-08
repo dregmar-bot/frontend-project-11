@@ -18,7 +18,6 @@ export default (state, instance, elements) => {
       elements.feedbackDiv.classList.replace('text-success', 'text-danger');
       elements.input.classList.add('is-invalid');
       elements.feedbackDiv.textContent = errorMessage;
-      return;
     }
     if (state.formState === 'valid') {
       elements.input.classList.remove('is-invalid');
