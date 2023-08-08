@@ -17,92 +17,107 @@ export default () => {
     },
   }).then(() => {
     const state = {
-      addedNewFeed: false,
-      displayed: false,
+      formState: '',
       error: '',
       feeds: [],
       modal: {
-        title: '',
-        description: '',
-        link: '',
+        postId: 0,
       },
       uiState: {
         viewedPosts: [],
       },
     };
-    const watchedState = watch(state, i18nInstance);
+
+    const elements = {
+      modal: {
+        title: document.querySelector('.modal-title'),
+        body: document.querySelector('.modal-body'),
+        link: document.querySelector('.full-article'),
+      },
+      input: document.querySelector('#url-input'),
+      feedbackDiv: document.querySelector('.feedback'),
+      postsDiv: document.querySelector('.posts'),
+      feedsDiv: document.querySelector('.feeds'),
+    };
+
+    const watchedState = watch(state, i18nInstance, elements);
     const urlSchema = string().url('errors.notValidUrl').test(
       'already not',
       'errors.alreadyHave',
       (value) => !state.feeds.map((feed) => feed.link).includes(value),
     );
-
-    const takeFeed = (url) => {
-      state.addedNewFeed = !state.feeds.map((f) => f.link).includes(url);
-      state.displayed = false;
-      axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`)
+    const takeFeed = (url, cb) => {
+      const promise = axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`)
         .then((response) => {
+          let feed;
           try {
-            const feed = parseRss(response.data.contents);
-            feed.link = url;
-            const setPostId = (post) => {
-              post.id = _.uniqueId();
-              return post;
-            };
-            if (state.addedNewFeed) {
-              feed.posts.forEach(setPostId);
-              state.feeds = [...state.feeds, feed];
-            } else {
-              const [currentFeed] = state.feeds.filter((f) => f.link === feed.link);
-              const currentPostsTitles = currentFeed.posts.map((p) => p.title);
-              const newPosts = feed.posts.filter((p) => !currentPostsTitles.includes(p.title));
-              newPosts.forEach(setPostId);
-              currentFeed.posts = [...currentFeed.posts, ...newPosts];
-            }
-            state.error = '';
-            watchedState.displayed = true;
+            feed = cb(url, response);
           } catch (e) {
+            state.formState = 'invalid';
             watchedState.error = e.message === 'parsing error' ? 'errors.parserError' : 'errors.undefinedError';
           }
+          return feed;
         })
         .catch(() => {
+          state.formState = 'invalid';
           watchedState.error = 'errors.networkError';
         });
+      return promise;
     };
+    const takeNewFeed = (url, response) => {
+      const feed = parseRss(response.data.contents);
+      feed.link = url;
+      const setPostId = (post) => {
+        post.id = _.uniqueId();
+        return post;
+      };
+      feed.posts.forEach(setPostId);
+      state.formState = 'valid';
+      state.error = '';
+      watchedState.feeds = [...state.feeds, feed];
+      return feed;
+    };
+    const updateFeed = (url, response) => {
+      const feed = parseRss(response.data.contents);
+      feed.link = url;
+      const setPostId = (post) => {
+        post.id = _.uniqueId();
+        return post;
+      };
+      const [currentFeed] = watchedState.feeds.filter((f) => f.link === feed.link);
+      const currentPostsTitles = currentFeed.posts.map((p) => p.title);
+      const newPosts = feed.posts.filter((p) => !currentPostsTitles.includes(p.title));
+      newPosts.forEach(setPostId);
+      currentFeed.posts = [...currentFeed.posts, ...newPosts];
+      return feed;
+    };
+
     const updateFeeds = () => {
-      try {
-        state.feeds.forEach((feed) => {
-          takeFeed(feed.link);
-        });
-      } finally {
+      const promises = state.feeds.map((feed) => takeFeed(feed.link, updateFeed));
+      Promise.all(promises).then(() => {
         window.setTimeout(updateFeeds, 5000);
-      }
+      });
     };
 
     const rssForm = document.querySelector('.rss-form');
     rssForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const { url } = Object.fromEntries(new FormData(e.target));
+      const url = new FormData(e.target).get('url');
       urlSchema.validate(url)
         .then((link) => {
-          takeFeed(link);
+          takeFeed(link, takeNewFeed);
         })
         .catch((error) => {
+          state.formState = 'invalid';
           watchedState.error = error.message;
         });
     });
     const postsDiv = document.querySelector('.posts');
     postsDiv.addEventListener('click', (e) => {
-      if (e.target.hasAttribute('data-id')) {
-        const id = Number(e.target.dataset.id);
-        const getPost = (postTd) => {
-          const [feed] = state.feeds.filter((f) => f.posts.map((post) => post.id).includes(postTd));
-          const [result] = feed.posts.filter((post) => post.id === postTd.toString());
-          return result;
-        };
-        const { title, description, link } = getPost(id.toString());
-        state.uiState.viewedPosts = [...state.uiState.viewedPosts, id.toString()];
-        watchedState.modal = { title, description, link };
+      if (e.target.dataset.id) {
+        const { id } = e.target.dataset;
+        state.uiState.viewedPosts = [...state.uiState.viewedPosts, id];
+        watchedState.modal.postId = id;
       }
     });
     updateFeeds();
