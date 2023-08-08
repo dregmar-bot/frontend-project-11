@@ -1,30 +1,34 @@
 import onChange from 'on-change';
 
-export default (state, instance) => {
-  const render = (path, value) => {
-    document.querySelector('.modal-title').textContent = state.modal.title;
-    document.querySelector('.modal-body').textContent = state.modal.description;
-    document.querySelector('.full-article').href = state.modal.link;
-    const input = document.querySelector('#url-input');
-    const feedbackDiv = document.querySelector('.feedback');
-    if (state.error.length > 0) {
-      const errorMessage = instance.t(value);
-      feedbackDiv.classList.replace('text-success', 'text-danger');
-      input.classList.add('is-invalid');
-      feedbackDiv.textContent = errorMessage;
+export default (state, instance, elements) => {
+  const render = (path) => {
+    if (path === 'modal.postId') {
+      const getPost = (postTd) => {
+        const [feed] = state.feeds.filter((f) => f.posts.map((post) => post.id).includes(postTd));
+        const [result] = feed.posts.filter((post) => post.id === postTd);
+        return result;
+      };
+      const currentPost = getPost(state.modal.postId);
+      elements.modal.title.textContent = currentPost.title;
+      elements.modal.body.textContent = currentPost.description;
+      elements.modal.link.href = currentPost.link;
+    }
+    if (state.formState === 'invalid') {
+      const errorMessage = instance.t(state.error);
+      elements.feedbackDiv.classList.replace('text-success', 'text-danger');
+      elements.input.classList.add('is-invalid');
+      elements.feedbackDiv.textContent = errorMessage;
       return;
     }
-    if (state.addedNewFeed) {
-      input.classList.remove('is-invalid');
+    if (state.formState === 'valid') {
+      elements.input.classList.remove('is-invalid');
       const form = document.querySelector('.rss-form');
       form.reset();
-      input.focus();
-      feedbackDiv.textContent = instance.t('complete');
-      feedbackDiv.classList.replace('text-danger', 'text-success');
+      elements.input.focus();
+      elements.feedbackDiv.textContent = instance.t('complete');
+      elements.feedbackDiv.classList.replace('text-danger', 'text-success');
     }
-    const postsDiv = document.querySelector('.posts');
-    const feedsDiv = document.querySelector('.feeds');
-    if (!feedsDiv.querySelector('.card-title')) {
+    if (!elements.feedsDiv.querySelector('.card-title')) {
       const card = document.createElement('div');
       card.classList.add('card', 'border-0');
       const cardBody = document.createElement('div');
@@ -35,10 +39,10 @@ export default (state, instance) => {
       const listGroup = document.createElement('ul');
       listGroup.classList.add('list-group', 'border-0', 'rounded-0');
       card.append(cardBody, listGroup);
-      postsDiv.append(card);
-      feedsDiv.append(card.cloneNode(true));
-      feedsDiv.querySelector('.card-title').textContent = instance.t('cardTitles.feeds');
-      postsDiv.querySelector('.card-title').textContent = instance.t('cardTitles.posts');
+      elements.postsDiv.append(card);
+      elements.feedsDiv.append(card.cloneNode(true));
+      elements.feedsDiv.querySelector('.card-title').textContent = instance.t('cardTitles.feeds');
+      elements.postsDiv.querySelector('.card-title').textContent = instance.t('cardTitles.posts');
     }
     const listGroupItem = document.createElement('li');
     listGroupItem.classList.add('list-group-item', 'border-0', 'border-end-0');
@@ -90,8 +94,8 @@ export default (state, instance) => {
       const idB = b.firstChild.getAttribute('data-id');
       return Number(idA) > Number(idB) ? -1 : 1;
     });
-    feedsDiv.querySelector('.list-group').replaceChildren(...feeds);
-    postsDiv.querySelector('.list-group').replaceChildren(...sortedPosts);
+    elements.feedsDiv.querySelector('.list-group').replaceChildren(...feeds);
+    elements.postsDiv.querySelector('.list-group').replaceChildren(...sortedPosts);
   };
-  return onChange(state, render, { isShallow: true });
+  return onChange(state, render);
 };
