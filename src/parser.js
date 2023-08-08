@@ -6,7 +6,6 @@ export default (string) => {
   }
   const items = doc.querySelectorAll('item');
   const posts = [...items].map((item) => ({
-    viewed: false,
     title: item.querySelector('title').textContent,
     description: item.querySelector('description').textContent,
     link: item.querySelector('link').textContent,
