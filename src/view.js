@@ -1,6 +1,10 @@
 import onChange from 'on-change';
 
 export default (state, instance, elements) => {
+  const renderButton = () => {
+    const btn = document.querySelector('button[type=submit]');
+    btn.disabled = state.inputDisabled;
+  };
   const renderModal = () => {
     const getPost = (postTd) => {
       const [result] = state.posts.filter((post) => post.id === postTd);
@@ -11,7 +15,36 @@ export default (state, instance, elements) => {
     elements.modal.body.textContent = currentPost.description;
     elements.modal.link.href = currentPost.link;
   };
+  const renderForm = () => {
+    if (state.formState === 'invalid') {
+      const errorMessage = instance.t(state.error);
+      elements.feedbackDiv.classList.replace('text-success', 'text-danger');
+      elements.input.classList.add('is-invalid');
+      elements.feedbackDiv.textContent = errorMessage;
+    } else {
+      elements.input.classList.remove('is-invalid');
+      const form = document.querySelector('.rss-form');
+      form.reset();
+      elements.input.focus();
+      elements.feedbackDiv.textContent = instance.t('complete');
+      elements.feedbackDiv.classList.replace('text-danger', 'text-success');
+    }
+  };
   const renderPosts = () => {
+    if (!elements.postsDiv.querySelector('.card-title')) {
+      const card = document.createElement('div');
+      card.classList.add('card', 'border-0');
+      const cardBody = document.createElement('div');
+      cardBody.classList.add('card-body');
+      const cardTitle = document.createElement('h2');
+      cardTitle.classList.add('card-title', 'h4');
+      cardBody.append(cardTitle);
+      const listGroup = document.createElement('ul');
+      listGroup.classList.add('list-group', 'border-0', 'rounded-0');
+      card.append(cardBody, listGroup);
+      elements.postsDiv.append(card);
+      elements.postsDiv.querySelector('.card-title').textContent = instance.t('cardTitles.posts');
+    }
     const posts = state.posts
       .map((post) => {
         const listGroupItem = document.createElement('li');
@@ -45,6 +78,20 @@ export default (state, instance, elements) => {
     elements.postsDiv.querySelector('.list-group').replaceChildren(...sortedPosts);
   };
   const renderFeeds = () => {
+    if (!elements.feedsDiv.querySelector('.card-title')) {
+      const card = document.createElement('div');
+      card.classList.add('card', 'border-0');
+      const cardBody = document.createElement('div');
+      cardBody.classList.add('card-body');
+      const cardTitle = document.createElement('h2');
+      cardTitle.classList.add('card-title', 'h4');
+      cardBody.append(cardTitle);
+      const listGroup = document.createElement('ul');
+      listGroup.classList.add('list-group', 'border-0', 'rounded-0');
+      card.append(cardBody, listGroup);
+      elements.feedsDiv.append(card.cloneNode(true));
+      elements.feedsDiv.querySelector('.card-title').textContent = instance.t('cardTitles.feeds');
+    }
     const prepareFeedHtml = (feed) => {
       const listGroupItem = document.createElement('li');
       listGroupItem.classList.add('list-group-item', 'border-0', 'border-end-0');
@@ -60,40 +107,12 @@ export default (state, instance, elements) => {
     const feeds = state.feeds.map(prepareFeedHtml);
     elements.feedsDiv.querySelector('.list-group').replaceChildren(...feeds);
   };
-  const renderForm = () => {
-    if (state.formState === 'invalid') {
-      const errorMessage = instance.t(state.error);
-      elements.feedbackDiv.classList.replace('text-success', 'text-danger');
-      elements.input.classList.add('is-invalid');
-      elements.feedbackDiv.textContent = errorMessage;
-    } else {
-      elements.input.classList.remove('is-invalid');
-      const form = document.querySelector('.rss-form');
-      form.reset();
-      elements.input.focus();
-      elements.feedbackDiv.textContent = instance.t('complete');
-      elements.feedbackDiv.classList.replace('text-danger', 'text-success');
-    }
-  };
 
   const render = (path) => {
-    if (!elements.feedsDiv.querySelector('.card-title')) {
-      const card = document.createElement('div');
-      card.classList.add('card', 'border-0');
-      const cardBody = document.createElement('div');
-      cardBody.classList.add('card-body');
-      const cardTitle = document.createElement('h2');
-      cardTitle.classList.add('card-title', 'h4');
-      cardBody.append(cardTitle);
-      const listGroup = document.createElement('ul');
-      listGroup.classList.add('list-group', 'border-0', 'rounded-0');
-      card.append(cardBody, listGroup);
-      elements.postsDiv.append(card);
-      elements.feedsDiv.append(card.cloneNode(true));
-      elements.feedsDiv.querySelector('.card-title').textContent = instance.t('cardTitles.feeds');
-      elements.postsDiv.querySelector('.card-title').textContent = instance.t('cardTitles.posts');
-    }
     switch (path) {
+      case 'inputDisabled':
+        renderButton();
+        break;
       case 'formState':
         renderForm();
         break;
