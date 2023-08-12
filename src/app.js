@@ -47,6 +47,39 @@ export default () => {
       'errors.alreadyHave',
       (value) => !state.feeds.map((feed) => feed.link).includes(value),
     );
+
+    const updateFeeds = () => {
+      const promises = state.feeds.map((feed) => axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(feed.link)}`)
+      .then((response) => {
+        try {
+          const { posts } = parseRss(response.data.contents);
+          const currentPosts = state.posts.filter((p) => p.feedId === feed.id);
+          const currentPostsTitles = currentPosts.map((p) => p.title);
+          const newPosts = posts.filter((p) => !currentPostsTitles.includes(p.title));
+          if (newPosts.length === 0) {
+            return;
+          }
+          const setPostIds = (post) => {
+            post.feedId = feed.id;
+            post.id = _.uniqueId();
+            return post;
+          };
+          newPosts.forEach(setPostIds);
+          watchedState.posts = [...state.posts, ...newPosts];
+        } catch (e) {
+          state.error = e.message === 'parsing error' ? 'errors.parserError' : 'errors.undefinedError';
+          watchedState.formState = 'invalid';
+        }
+      })
+      .catch(() => {
+        state.error = 'errors.networkError';
+        watchedState.formState = 'invalid';
+      }));
+      Promise.all(promises).then(() => {
+        window.setTimeout(updateFeeds, 5000);
+      });
+    };
+
     const takeFeed = (url) => {
       axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`)
         .then((response) => {
@@ -64,6 +97,7 @@ export default () => {
             state.error = '';
             watchedState.feeds = [...state.feeds, feed];
             watchedState.posts = [...state.posts, ...posts];
+            updateFeeds();
           } catch (e) {
             state.error = e.message === 'parsing error' ? 'errors.parserError' : 'errors.undefinedError';
             watchedState.formState = 'invalid';
@@ -73,37 +107,6 @@ export default () => {
           state.error = 'errors.networkError';
           watchedState.formState = 'invalid';
         });
-    };
-    const updateFeeds = () => {
-      const promises = state.feeds.map((feed) => axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(feed.link)}`)
-        .then((response) => {
-          try {
-            const { posts } = parseRss(response.data.contents);
-            const currentPosts = state.posts.filter((p) => p.feedId === feed.id);
-            const currentPostsTitles = currentPosts.map((p) => p.title);
-            const newPosts = posts.filter((p) => !currentPostsTitles.includes(p.title));
-            if (newPosts.length === 0) {
-              return;
-            }
-            const setPostIds = (post) => {
-              post.feedId = feed.id;
-              post.id = _.uniqueId();
-              return post;
-            };
-            newPosts.forEach(setPostIds);
-            watchedState.posts = [...state.posts, ...newPosts];
-          } catch (e) {
-            state.error = e.message === 'parsing error' ? 'errors.parserError' : 'errors.undefinedError';
-            watchedState.formState = 'invalid';
-          }
-        })
-        .catch(() => {
-          state.error = 'errors.networkError';
-          watchedState.formState = 'invalid';
-        }));
-      Promise.all(promises).then(() => {
-        window.setTimeout(updateFeeds, 5000);
-      });
     };
 
     const rssForm = document.querySelector('.rss-form');
@@ -128,7 +131,5 @@ export default () => {
         watchedState.modal.postId = id;
       }
     });
-
-    updateFeeds();
   });
 };
