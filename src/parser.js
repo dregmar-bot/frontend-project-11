@@ -11,8 +11,10 @@ export default (string) => {
     link: item.querySelector('link').textContent,
   }));
   return {
-    title: doc.querySelector('title').textContent,
-    description: doc.querySelector('description').textContent,
+    feed: {
+      title: doc.querySelector('title').textContent,
+      description: doc.querySelector('description').textContent,
+    },
     posts,
   };
 };
