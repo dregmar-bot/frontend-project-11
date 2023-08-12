@@ -20,6 +20,7 @@ export default () => {
       formState: '',
       error: '',
       feeds: [],
+      posts: [],
       modal: {
         postId: 0,
       },
@@ -46,54 +47,60 @@ export default () => {
       'errors.alreadyHave',
       (value) => !state.feeds.map((feed) => feed.link).includes(value),
     );
-    const takeFeed = (url, cb) => {
-      const promise = axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`)
+    const takeFeed = (url) => {
+      axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`)
         .then((response) => {
-          let feed;
           try {
-            feed = cb(url, response);
+            const { feed, posts } = parseRss(response.data.contents);
+            feed.id = _.uniqueId();
+            feed.link = url;
+            const setPostIds = (post) => {
+              post.feedId = feed.id;
+              post.id = _.uniqueId();
+              return post;
+            };
+            posts.forEach(setPostIds);
+            watchedState.formState = 'valid';
+            state.error = '';
+            watchedState.feeds = [...state.feeds, feed];
+            watchedState.posts = [...state.posts, ...posts];
           } catch (e) {
-            state.formState = 'invalid';
-            watchedState.error = e.message === 'parsing error' ? 'errors.parserError' : 'errors.undefinedError';
+            state.error = e.message === 'parsing error' ? 'errors.parserError' : 'errors.undefinedError';
+            watchedState.formState = 'invalid';
           }
-          return feed;
         })
         .catch(() => {
-          state.formState = 'invalid';
-          watchedState.error = 'errors.networkError';
+          state.error = 'errors.networkError';
+          watchedState.formState = 'invalid';
         });
-      return promise;
     };
-    const takeNewFeed = (url, response) => {
-      const feed = parseRss(response.data.contents);
-      feed.link = url;
-      const setPostId = (post) => {
-        post.id = _.uniqueId();
-        return post;
-      };
-      feed.posts.forEach(setPostId);
-      state.formState = 'valid';
-      state.error = '';
-      watchedState.feeds = [...state.feeds, feed];
-      return feed;
-    };
-    const updateFeed = (url, response) => {
-      const feed = parseRss(response.data.contents);
-      feed.link = url;
-      const setPostId = (post) => {
-        post.id = _.uniqueId();
-        return post;
-      };
-      const [currentFeed] = watchedState.feeds.filter((f) => f.link === feed.link);
-      const currentPostsTitles = currentFeed.posts.map((p) => p.title);
-      const newPosts = feed.posts.filter((p) => !currentPostsTitles.includes(p.title));
-      newPosts.forEach(setPostId);
-      currentFeed.posts = [...currentFeed.posts, ...newPosts];
-      return feed;
-    };
-
     const updateFeeds = () => {
-      const promises = state.feeds.map((feed) => takeFeed(feed.link, updateFeed));
+      const promises = state.feeds.map((feed) => axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(feed.link)}`)
+        .then((response) => {
+          try {
+            const { posts } = parseRss(response.data.contents);
+            const currentPosts = state.posts.filter((p) => p.feedId === feed.id);
+            const currentPostsTitles = currentPosts.map((p) => p.title);
+            const newPosts = posts.filter((p) => !currentPostsTitles.includes(p.title));
+            if (newPosts.length === 0) {
+              return;
+            }
+            const setPostIds = (post) => {
+              post.feedId = feed.id;
+              post.id = _.uniqueId();
+              return post;
+            };
+            newPosts.forEach(setPostIds);
+            watchedState.posts = [...state.posts, ...newPosts];
+          } catch (e) {
+            state.error = e.message === 'parsing error' ? 'errors.parserError' : 'errors.undefinedError';
+            watchedState.formState = 'invalid';
+          }
+        })
+        .catch(() => {
+          state.error = 'errors.networkError';
+          watchedState.formState = 'invalid';
+        }));
       Promise.all(promises).then(() => {
         window.setTimeout(updateFeeds, 5000);
       });
@@ -105,13 +112,14 @@ export default () => {
       const url = new FormData(e.target).get('url');
       urlSchema.validate(url)
         .then((link) => {
-          takeFeed(link, takeNewFeed);
+          takeFeed(link);
         })
         .catch((error) => {
-          state.formState = 'invalid';
-          watchedState.error = error.message;
+          state.error = error.message;
+          watchedState.formState = 'invalid';
         });
     });
+
     const postsDiv = document.querySelector('.posts');
     postsDiv.addEventListener('click', (e) => {
       if (e.target.dataset.id) {
@@ -120,6 +128,7 @@ export default () => {
         watchedState.modal.postId = id;
       }
     });
+
     updateFeeds();
   });
 };
