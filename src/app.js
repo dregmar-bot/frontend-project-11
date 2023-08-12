@@ -18,6 +18,7 @@ export default () => {
   }).then(() => {
     const state = {
       formState: '',
+      inputDisabled: false,
       error: '',
       feeds: [],
       posts: [],
@@ -106,12 +107,16 @@ export default () => {
         .catch(() => {
           state.error = 'errors.networkError';
           watchedState.formState = 'invalid';
+        })
+        .then(() => {
+          watchedState.inputDisabled = false;
         });
     };
 
     const rssForm = document.querySelector('.rss-form');
     rssForm.addEventListener('submit', (e) => {
       e.preventDefault();
+      watchedState.inputDisabled = true;
       const url = new FormData(e.target).get('url');
       urlSchema.validate(url)
         .then((link) => {
