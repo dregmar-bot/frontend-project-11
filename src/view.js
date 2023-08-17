@@ -1,10 +1,6 @@
 import onChange from 'on-change';
 
 export default (state, instance, elements) => {
-  const renderButton = () => {
-    const btn = document.querySelector('button[type=submit]');
-    btn.disabled = state.inputDisabled;
-  };
   const renderModal = () => {
     const getPost = (postTd) => {
       const [result] = state.posts.filter((post) => post.id === postTd);
@@ -16,18 +12,31 @@ export default (state, instance, elements) => {
     elements.modal.link.href = currentPost.link;
   };
   const renderForm = () => {
-    if (state.formState === 'invalid') {
-      const errorMessage = instance.t(state.error);
-      elements.feedbackDiv.classList.replace('text-success', 'text-danger');
-      elements.input.classList.add('is-invalid');
-      elements.feedbackDiv.textContent = errorMessage;
-    } else {
-      elements.input.classList.remove('is-invalid');
-      const form = document.querySelector('.rss-form');
-      form.reset();
-      elements.input.focus();
-      elements.feedbackDiv.textContent = instance.t('complete');
-      elements.feedbackDiv.classList.replace('text-danger', 'text-success');
+    const btn = document.querySelector('button[type=submit]');
+    switch (state.formState) {
+      case ('empty'):
+        break;
+      case ('sending'):
+        btn.disabled = true;
+        break;
+      case ('invalid'):
+        btn.disabled = false;
+        const errorMessage = instance.t(state.error);
+        elements.feedbackDiv.classList.replace('text-success', 'text-danger');
+        elements.input.classList.add('is-invalid');
+        elements.feedbackDiv.textContent = errorMessage;
+        break;
+      case ('valid'):
+        btn.disabled = false;
+        elements.input.classList.remove('is-invalid');
+        const form = document.querySelector('.rss-form');
+        form.reset();
+        elements.input.focus();
+        elements.feedbackDiv.textContent = instance.t('complete');
+        elements.feedbackDiv.classList.replace('text-danger', 'text-success');
+        break;
+      default:
+        throw new Error(`Unexpected form state ${state.formState}`);
     }
   };
   const renderPosts = () => {
@@ -110,20 +119,21 @@ export default (state, instance, elements) => {
 
   const render = (path) => {
     switch (path) {
-      case 'inputDisabled':
-        renderButton();
+      case 'error':
         break;
       case 'formState':
         renderForm();
         break;
       case 'modal.postId':
         renderModal();
-        renderPosts();
         break;
       case 'feeds':
         renderFeeds();
         break;
       case 'posts':
+        renderPosts();
+        break;
+      case 'uiState.viewedPosts':
         renderPosts();
         break;
       default:
