@@ -13,6 +13,8 @@ export default (state, instance, elements) => {
   };
   const renderForm = () => {
     const btn = document.querySelector('button[type=submit]');
+    const errorMessage = instance.t(state.error);
+    const form = document.querySelector('.rss-form');
     switch (state.formState) {
       case ('empty'):
         break;
@@ -21,7 +23,6 @@ export default (state, instance, elements) => {
         break;
       case ('invalid'):
         btn.disabled = false;
-        const errorMessage = instance.t(state.error);
         elements.feedbackDiv.classList.replace('text-success', 'text-danger');
         elements.input.classList.add('is-invalid');
         elements.feedbackDiv.textContent = errorMessage;
@@ -29,7 +30,6 @@ export default (state, instance, elements) => {
       case ('valid'):
         btn.disabled = false;
         elements.input.classList.remove('is-invalid');
-        const form = document.querySelector('.rss-form');
         form.reset();
         elements.input.focus();
         elements.feedbackDiv.textContent = instance.t('complete');
