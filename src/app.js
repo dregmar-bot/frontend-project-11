@@ -29,7 +29,7 @@ const updateFeeds = (state) => {
       state.posts = [...state.posts, ...newPosts];
     })
     .catch((e) => {
-      console.log(e);
+      console.log(e.message);
     }));
   Promise.all(promises).then(() => {
     window.setTimeout(() => updateFeeds(state), 5000);
@@ -39,28 +39,28 @@ const updateFeeds = (state) => {
 const takeFeed = (url, state) => {
   axios.get(proxify(url))
     .then((response) => {
-      try {
-        const { feed, posts } = parseRss(response.data.contents);
-        feed.id = _.uniqueId();
-        feed.link = url;
-        const setPostIds = (post) => {
-          post.feedId = feed.id;
-          post.id = _.uniqueId();
-          return post;
-        };
-        posts.forEach(setPostIds);
-        state.formState = 'valid';
-        state.error = null;
-        state.feeds = [...state.feeds, feed];
-        state.posts = [...state.posts, ...posts];
-      } catch (e) {
-        console.log(e);
-        state.error = e.message === 'parsing error' ? 'errors.parserError' : 'errors.undefinedError';
-        state.formState = 'invalid';
-      }
+      const { feed, posts } = parseRss(response.data.contents);
+      feed.id = _.uniqueId();
+      feed.link = url;
+      const setPostIds = (post) => {
+        post.feedId = feed.id;
+        post.id = _.uniqueId();
+        return post;
+      };
+      posts.forEach(setPostIds);
+      state.formState = 'valid';
+      state.error = null;
+      state.feeds = [...state.feeds, feed];
+      state.posts = [...state.posts, ...posts];
     })
-    .catch(() => {
-      state.error = 'errors.networkError';
+    .catch((e) => {
+      if (e.isParsingError) {
+        state.error = 'errors.parserError';
+      } else if (e.isAxiosError) {
+        state.error = 'errors.networkError';
+      } else {
+        state.errors = 'errors.undefinedError';
+      }
       state.formState = 'invalid';
     });
 };
@@ -126,7 +126,9 @@ export default () => {
     postsDiv.addEventListener('click', (e) => {
       if (e.target.dataset.id) {
         const { id } = e.target.dataset;
-        watchedState.uiState.viewedPosts = [...watchedState.uiState.viewedPosts, id];
+        if (!watchedState.uiState.viewedPosts.includes(id)) {
+          watchedState.uiState.viewedPosts = [...watchedState.uiState.viewedPosts, id];
+        }
         watchedState.modal.postId = id;
       }
     });
