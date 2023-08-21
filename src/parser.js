@@ -1,8 +1,11 @@
 export default (string) => {
   const parser = new DOMParser();
   const doc = parser.parseFromString(string, 'application/xml');
-  if (doc.querySelector('parsererror')) {
-    throw new Error('parsing error');
+  const errorNode = doc.querySelector('parsererror');
+  if (errorNode) {
+    const error = new Error(errorNode.textContent);
+    error.isParsingError = true;
+    throw error;
   }
   const items = doc.querySelectorAll('item');
   const posts = [...items].map((item) => ({
